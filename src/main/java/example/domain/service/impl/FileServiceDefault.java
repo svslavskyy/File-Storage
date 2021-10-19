@@ -23,7 +23,6 @@ public class FileServiceDefault implements FileService {
 
   private final String fileNotFound = "{\"success\" : \"false\",\"error\" : \"file not found\"}";
   private final String successTrue = "{\"success\" : \"true\"}";
-  private final String tagNotFound = "{\"success\" : \"false\",\"error\" : \"tag not found on file\"}";
 
 
   @Autowired
@@ -104,6 +103,8 @@ public class FileServiceDefault implements FileService {
     if (fileRepository.existsById(id)) {
       Set<String> set = new HashSet<>(tags);
       File tempFile = fileRepository.findById(id).orElseThrow();
+      String tagNotFound = "{\"success\" : \"false\",\"error\" : \"tag not found on file\"}";
+
       if (tempFile.getTags() != null) {
         if (tempFile.getTags().containsAll(set)) {
           tempFile.getTags().removeAll(set);
@@ -139,7 +140,7 @@ public class FileServiceDefault implements FileService {
       }
       return fileRepository.findAll(pageable);
     } else {
-      Set<String> newTags = new HashSet(tags);
+      Set<String> newTags = new HashSet<>(tags);
       if (q != null && !q.equals("")) {
         return fileRepository.findFilesByTagsAndNameLike(newTags, q, pageable);
       }

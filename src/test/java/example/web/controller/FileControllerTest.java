@@ -97,8 +97,7 @@ public class FileControllerTest {
     tags.add("newtag");
     tags.add("favorite");
 
-    List<String> answerTags = new ArrayList<>(tags);
-    answerTags.add("audio");
+
     mockMvc.perform(post("/file/" + id + "/tags")
         .contentType(MediaType.TEXT_PLAIN)
         .content(id)
