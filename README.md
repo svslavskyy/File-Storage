@@ -9,8 +9,6 @@
 
 ```curl http://localhost:8080/file``` Post File
 
-```curl http://localhost:8080/file/{id}``` GET File by id
-
 ```curl http://localhost:8080/file/{id}}/tags``` Post tags to File
 
 ```curl http://localhost:8080/file/{id}/tags``` Delete tags to File
