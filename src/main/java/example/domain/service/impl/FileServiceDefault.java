@@ -1,16 +1,19 @@
 package example.domain.service.impl;
 
-import example.domain.exceptions.model.ExceptionMessage;
-import example.domain.exceptions.model.Message;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import example.domain.model.File;
-import example.domain.model.IdFile;
+import example.domain.model.ServiceObject;
+import example.domain.model.StarterTags;
 import example.domain.service.FileService;
 import example.repository.FileRepository;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -19,146 +22,141 @@ import java.util.*;
 public class FileServiceDefault implements FileService {
   private final FileRepository fileRepository;
 
+  private final String fileNotFound = "{\"success\" : \"false\",\"error\" : \"file not found\"}";
+  private final String successTrue = "{\"success\" : \"true\"}";
+
   @Autowired
   public FileServiceDefault(FileRepository fileRepository) {
     this.fileRepository = fileRepository;
   }
 
+  private JsonNode generateJson(String string) {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode node = null;
+    try {
+      node = mapper.readTree(string);
+    } catch (JsonProcessingException e) {
+      e.printStackTrace();
+    }
+    return node;
+  }
+
+
   @Override
-  public ResponseEntity createFile(File file) {
-    if (file.getName() == null) {
-      return ResponseEntity.status(400)
-          .body(new ExceptionMessage(false, "Name can not be null"));
-    } else if (file.getSize() < 0) {
-      return ResponseEntity.status(400)
-          .body(new ExceptionMessage(false, "Size can be more 0"));
+  public ServiceObject createFile(File file) {
+    if (file.getName() == null || file.getName().equals("")) {
+
+      String string = "{\"success\" : \"false\",\"error\" : \"Name can not be null\"}";
+      return new ServiceObject(400, generateJson(string));
+
+    } else if (file.getSize() == null || file.getSize() < 0) {
+
+      String string = "{\"success\" : \"false\",\"error\" : \"Size can be more 0\"}";
+      return new ServiceObject(400, generateJson(string));
+
     } else {
       if (file.getId() == null) {
         file.setId(UUID.randomUUID().toString());
       }
+
       String name = file.getName();
-      String[] subStr;
-      subStr = name.split("\\.");
-
-
-      switch (subStr[subStr.length - 1]) {
-        case "txt":
-          file.setTags(Collections.singleton("text"));
-          break;
-        case "mp3":
-        case "aac":
-        case "wav":
-        case "flac":
-          file.setTags(Collections.singleton("audio"));
-          break;
-        case "mp4":
-        case "avi":
-        case "mkv":
-        case "flv":
-          file.setTags(Collections.singleton("video"));
-          break;
-        case "doc":
-        case "docx":
-          file.setTags(Collections.singleton("document"));
-          break;
-        case "jpg":
-        case "jpeg":
-        case "gif":
-        case "png":
-        case "bmp":
-          file.setTags(Collections.singleton("image"));
-          break;
-
+      String extension = FilenameUtils.getExtension(name).toLowerCase();
+      StarterTags tags = new StarterTags();
+      String tagFromName = tags.getStarterTags().get(extension);
+      if (tagFromName != null) {
+        file.setTags(Collections.singleton(tagFromName));
       }
       fileRepository.save(file);
     }
-
-    return ResponseEntity.status(200).body(new IdFile(file.getId()));
+    String string = "{\"ID\" : \"" + file.getId() + "\"}";
+    return new ServiceObject(200, generateJson(string));
   }
 
   @Override
-  public ResponseEntity getFileById(String id) {
-    if (fileRepository.existsById(id)) {
-      return ResponseEntity.status(200).body(fileRepository.findById(id));
-    } else {
-      return ResponseEntity.status(400).body(new ExceptionMessage(false, "file not found"));
-    }
-  }
-
-  @Override
-  public ResponseEntity deleteFileById(String id) {
+  public ServiceObject deleteFileById(String id) {
     if (fileRepository.existsById(id)) {
       fileRepository.deleteById(id);
-      return ResponseEntity.status(200).body(new Message(true));
+
+      return new ServiceObject(200, generateJson(successTrue));
     } else {
-      return ResponseEntity.status(404).body(new ExceptionMessage(false, "file not found"));
+      return new ServiceObject(404, generateJson(fileNotFound));
     }
   }
 
   @Override
-  public ResponseEntity assignTags(String id, List<String> tags) {
+  public ServiceObject assignTags(String id, List<String> tags) {
     if (fileRepository.existsById(id)) {
       Set<String> set = new HashSet<>(tags);
       File tempFile = fileRepository.findById(id).orElseThrow();
       set.addAll(tempFile.getTags());
       tempFile.setTags(set);
       fileRepository.save(tempFile);
-      return ResponseEntity.status(200).body(new Message(true));
+
+      return new ServiceObject(200, generateJson(successTrue));
     } else {
-      return ResponseEntity.status(404).body(new ExceptionMessage(false, "file not found"));
+      return new ServiceObject(404, generateJson(fileNotFound));
     }
   }
 
   @Override
-  public ResponseEntity deleteTags(String id, List<String> tags) {
+  public ServiceObject deleteTags(String id, List<String> tags) {
     if (fileRepository.existsById(id)) {
       Set<String> set = new HashSet<>(tags);
       File tempFile = fileRepository.findById(id).orElseThrow();
-      if (tempFile.getTags().containsAll(set)) {
-        tempFile.getTags().removeAll(set);
-        fileRepository.save(tempFile);
-        return ResponseEntity.status(200).body(new Message(true));
+      String tagNotFound = "{\"success\" : \"false\",\"error\" : \"tag not found on file\"}";
+
+      if (tempFile.getTags() != null) {
+        if (tempFile.getTags().containsAll(set)) {
+          tempFile.getTags().removeAll(set);
+          fileRepository.save(tempFile);
+          return new ServiceObject(200, generateJson(successTrue));
+        } else {
+          return new ServiceObject(404, generateJson(tagNotFound));
+        }
       } else {
-        return ResponseEntity.status(404).body(new ExceptionMessage(false, "tag not found on file"));
+        return new ServiceObject(404, generateJson(tagNotFound));
       }
+
     } else {
-      return ResponseEntity.status(404).body(new ExceptionMessage(false, "file not found"));
+      return new ServiceObject(404, generateJson(fileNotFound));
     }
   }
 
   @Override
-  public ResponseEntity getFiles(Optional<List<String>> tags,
-                                 Optional<Integer> page, Optional<Integer> size, Optional<String> q) {
-    int newPage = page.orElse(0);
-    int newSize = size.orElse(10);
+  public Page<File> getFiles(List<String> tags,
+                             Integer page, Integer size, String q) {
 
-    if (tags.isPresent()) {
-      Set<String> set = new HashSet<>(tags.get());
+    if (page == null || page < 0) {
+      page = 0;
+    }
+    if (size == null || size < 0) {
+      size = 10;
+    }
+
+    Pageable pageable = PageRequest.of(page, size);
+    if (tags == null || tags.isEmpty()) {
+      if (q != null && !q.equals("")) {
+        return fileRepository.findFilesByNameLike(q, pageable);
+      }
+      return fileRepository.findAll(pageable);
+    } else {
+
+      Set<String> newTags = new HashSet<>(tags);
+
       List<File> files = fileRepository.findAll();
       List<File> filesWithTags = new ArrayList<>();
       for (File file : files) {
         if (file.getTags() != null) {
-          if (file.getTags().containsAll(set)) {
+          if (file.getTags().containsAll(newTags)) {
             filesWithTags.add(file);
           }
         }
       }
-
-      q.ifPresent(s -> filesWithTags.retainAll(fileRepository.findFilesByNameLike(s)));
-      final Page<File> page1 = new PageImpl<>(filesWithTags, PageRequest.of(newPage, newSize), filesWithTags.size());
-      return ResponseEntity.status(200).body(page1);
-
-
-    } else {
-      if (q.isPresent()) {
-        List<File> temp = fileRepository.findFilesByNameLike(q.get());
-        final Page<File> page1 = new PageImpl<>(temp, PageRequest.of(newPage, newSize), temp.size());
-        return ResponseEntity.status(200).body(page1);
-      } else {
-        return ResponseEntity.status(200).body(fileRepository.findAll(PageRequest.of(newPage, newSize)));
-
+      if (q != null && !q.equals("")) {
+        filesWithTags.retainAll(fileRepository.findFilesByNameLike(q));
       }
-
+      return new PageImpl<>(filesWithTags, PageRequest.of(page, size), filesWithTags.size());
     }
+
   }
 }
