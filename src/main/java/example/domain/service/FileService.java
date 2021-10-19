@@ -1,21 +1,19 @@
 package example.domain.service;
 
 import example.domain.model.File;
-import org.springframework.http.ResponseEntity;
+import example.domain.model.ServiceObject;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface FileService {
-  ResponseEntity createFile(File file);
+  ServiceObject createFile(File file);
 
-  ResponseEntity getFileById(String id);
+  ServiceObject deleteFileById(String id);
 
-  ResponseEntity deleteFileById(String id);
+  ServiceObject assignTags(String id, List<String> tags);
 
-  ResponseEntity assignTags(String id, List<String> tags);
+  ServiceObject deleteTags(String id, List<String> tags);
 
-  ResponseEntity deleteTags(String id, List<String> tags);
-
-  ResponseEntity getFiles(Optional<List<String>> tags, Optional<Integer> page, Optional<Integer> size, Optional<String> q);
+  Page<File> getFiles(List<String> tags, Integer page, Integer size, String q);
 }

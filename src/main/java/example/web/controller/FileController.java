@@ -1,13 +1,15 @@
 package example.web.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import example.domain.model.File;
+import example.domain.model.ServiceObject;
 import example.domain.service.FileService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/file")
@@ -21,44 +23,42 @@ public class FileController {
   }
 
   @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-  public ResponseEntity insertFile(@RequestBody File file) {
+  public ResponseEntity<JsonNode> insertFile(@RequestBody File file) {
 
-    return fileService.createFile(file);
+    ServiceObject object = fileService.createFile(file);
+    return ResponseEntity.status(object.getStatus()).body(object.getJson());
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity deleteFileById(@PathVariable String id) {
+  public ResponseEntity<JsonNode> deleteFileById(@PathVariable String id) {
 
-    return fileService.deleteFileById(id);
-  }
-
-  @GetMapping("/{id}")
-  public ResponseEntity getFileById(@PathVariable String id) {
-
-    return fileService.getFileById(id);
+    ServiceObject object = fileService.deleteFileById(id);
+    return ResponseEntity.status(object.getStatus()).body(object.getJson());
   }
 
   @PostMapping("/{id}/tags")
-  public ResponseEntity assignTagsToFile(@PathVariable String id, @RequestBody List<String> tags) {
+  public ResponseEntity<JsonNode> assignTagsToFile(@PathVariable String id, @RequestBody List<String> tags) {
 
-    return fileService.assignTags(id, tags);
+    ServiceObject object = fileService.assignTags(id, tags);
+    return ResponseEntity.status(object.getStatus()).body(object.getJson());
   }
 
   @DeleteMapping("/{id}/tags")
-  public ResponseEntity deleteTagsToFile(@PathVariable String id, @RequestBody List<String> tags) {
+  public ResponseEntity<JsonNode> deleteTagsToFile(@PathVariable String id, @RequestBody List<String> tags) {
 
-    return fileService.deleteTags(id, tags);
+    ServiceObject object = fileService.deleteTags(id, tags);
+    return ResponseEntity.status(object.getStatus()).body(object.getJson());
   }
 
   @GetMapping()
-  public ResponseEntity getListFiles(
-      @RequestParam(value = "tags") Optional<List<String>> tags,
-      @RequestParam(value = "page") Optional<Integer> page,
-      @RequestParam(value = "size") Optional<Integer> size,
-      @RequestParam(value = "q") Optional<String> q
+  public ResponseEntity<Page<File>> getListFiles(
+      @RequestParam(value = "tags", required = false) List<String> tags,
+      @RequestParam(value = "page", required = false) Integer page,
+      @RequestParam(value = "size", required = false) Integer size,
+      @RequestParam(value = "q", required = false) String q
   ) {
 
-    return fileService.getFiles(tags, page, size, q);
+    return ResponseEntity.status(200).body(fileService.getFiles(tags, page, size, q));
   }
 
 }
