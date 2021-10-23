@@ -1,6 +1,8 @@
 package example.domain.service;
 
 import example.domain.model.File;
+import example.repository.FileRepository;
+import org.json.simple.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -128,15 +130,31 @@ public class FileServiceTest {
     Assertions.assertEquals(status, 404);
   }
 
+  /***
+   * This test can did work, if you want accept test, uncommit this text.
+   */
+
+
+//  @Autowired
+//  FileRepository fileRepository;
+//
+//  @BeforeEach
+//  public void deleteAll(){
+//    fileRepository.deleteAll();
+//    String name = "TestName.mp3";
+//    File file = new File(id, name, 125);
+//    fileService.createFile(file);
+//  }
+
   @Test
   public void getFiles() {
     List<String> tags = null;
     Integer page = null;
     Integer size = null;
     String q = null;
-    Page<File> page1 = fileService.getFiles(tags, page, size, q);
-    Pageable pageable = PageRequest.of(0, 10);
-    Assertions.assertEquals(page1.getPageable(), pageable);
+    JSONObject json = fileService.getFiles(tags, page, size, q);
+    System.out.println(json);
+    Assertions.assertEquals(json.get("total"), 1);
   }
 
 }

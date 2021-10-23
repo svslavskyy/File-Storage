@@ -2,6 +2,7 @@ package example.domain.service;
 
 import example.domain.model.File;
 import example.domain.model.ServiceObject;
+import org.json.simple.JSONObject;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
@@ -15,5 +16,5 @@ public interface FileService {
 
   ServiceObject deleteTags(String id, List<String> tags);
 
-  Page<File> getFiles(List<String> tags, Integer page, Integer size, String q);
+  JSONObject getFiles(List<String> tags, Integer page, Integer size, String q);
 }

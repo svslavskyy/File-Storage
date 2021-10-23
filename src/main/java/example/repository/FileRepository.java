@@ -16,6 +16,4 @@ public interface FileRepository extends ElasticsearchRepository<File, String> {
 
   List<File> findAll();
 
-  Page<File> findFilesByNameLike(String name, Pageable pageable);
-
 }

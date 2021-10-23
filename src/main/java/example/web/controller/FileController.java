@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import example.domain.model.File;
 import example.domain.model.ServiceObject;
 import example.domain.service.FileService;
+import org.json.simple.JSONObject;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -52,7 +53,7 @@ public class FileController {
   }
 
   @GetMapping()
-  public ResponseEntity<Page<File>> getListFiles(
+  public ResponseEntity<JSONObject> getListFiles(
       @RequestParam(value = "tags", required = false) List<String> tags,
       @RequestParam(value = "page", required = false) Integer page,
       @RequestParam(value = "size", required = false) Integer size,

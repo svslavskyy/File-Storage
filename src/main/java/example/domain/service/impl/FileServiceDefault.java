@@ -9,6 +9,7 @@ import example.domain.model.StarterTags;
 import example.domain.service.FileService;
 import example.repository.FileRepository;
 import org.apache.commons.io.FilenameUtils;
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -57,6 +58,8 @@ public class FileServiceDefault implements FileService {
     } else {
       if (file.getId() == null) {
         file.setId(UUID.randomUUID().toString());
+      }else if(fileRepository.existsById(file.getId())){
+        file.setId(file.getId()+"-up");
       }
 
       String name = file.getName();
@@ -123,7 +126,7 @@ public class FileServiceDefault implements FileService {
   }
 
   @Override
-  public Page<File> getFiles(List<String> tags,
+  public JSONObject getFiles(List<String> tags,
                              Integer page, Integer size, String q) {
 
     if (page == null || page < 0) {
@@ -133,12 +136,14 @@ public class FileServiceDefault implements FileService {
       size = 10;
     }
 
+
     Pageable pageable = PageRequest.of(page, size);
     if (tags == null || tags.isEmpty()) {
       if (q != null && !q.equals("")) {
-        return fileRepository.findFilesByNameLike(q, pageable);
+        return createJson(fileRepository.findFilesByNameLike(q), page, size);
+
       }
-      return fileRepository.findAll(pageable);
+      return createJson(fileRepository.findAll(), page, size);
     } else {
 
       Set<String> newTags = new HashSet<>(tags);
@@ -155,8 +160,21 @@ public class FileServiceDefault implements FileService {
       if (q != null && !q.equals("")) {
         filesWithTags.retainAll(fileRepository.findFilesByNameLike(q));
       }
-      return new PageImpl<>(filesWithTags, PageRequest.of(page, size), filesWithTags.size());
+      return createJson(filesWithTags, page, size);
     }
 
+  }
+
+  private JSONObject createJson(List<File> listFiles, Integer page, Integer size) {
+    int startIndex = page * size;
+    int endIndex = page * size + size;
+    if (listFiles.size() < endIndex) {
+      endIndex = listFiles.size();
+    }
+    List<File> list = listFiles.subList(startIndex,endIndex);
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put("total", listFiles.size());
+    jsonObject.put("page", list);
+    return jsonObject;
   }
 }
