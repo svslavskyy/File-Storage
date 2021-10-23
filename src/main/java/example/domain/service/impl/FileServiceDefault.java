@@ -59,7 +59,8 @@ public class FileServiceDefault implements FileService {
       if (file.getId() == null) {
         file.setId(UUID.randomUUID().toString());
       }else if(fileRepository.existsById(file.getId())){
-        file.setId(file.getId()+UUID.randomUUID());
+        String uuid = UUID.randomUUID().toString().substring(0,8);
+        file.setId(file.getId()+"-"+uuid);
       }
 
       String name = file.getName();
